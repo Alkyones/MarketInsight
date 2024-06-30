@@ -1,0 +1,1 @@
+-Please update the credentials path accordingly settings.py

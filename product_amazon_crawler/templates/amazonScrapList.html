@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Amazon Scraper | MarketMinder{% endblock %}
+
+{% block content %}
+<table class="table table-hover">
+    <thead>
+      <tr>
+        <th scope="col">Date</th>
+        <th scope="col">Reason</th>
+        <th scope="col"></th>
+      </tr>
+    </thead>
+    <tbody>
+        {% for el in data %}
+            <tr>
+                <th scope="row">{{el.created_at}}</th>
+                <td>Data scraped from Amazon on request. {{el.id}}</td>
+                <td><a href="{% url 'detail' el.id %}">Details</a></td>
+            </tr>
+        {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

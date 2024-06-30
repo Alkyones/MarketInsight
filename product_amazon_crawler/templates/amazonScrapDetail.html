@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Amazon Scraper | MarketMinder{% endblock %}
+
+{% block content %}
+<div id="accordion">
+    {% for categoryData in categories %}
+        {% with forloop.counter as counter %}
+            <div class="card">
+                <div class="card-header" id="heading_{{ counter }}">
+                    <h5 class="mb-0">
+                        <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapse_{{ counter }}" aria-expanded="false" aria-controls="collapse_{{ counter }}">
+                            {{ categoryData.category }}
+                        </button>
+                    </h5>
+                </div>
+                <div id="collapse_{{ counter }}" class="collapse" aria-labelledby="heading_{{ counter }}" data-parent="#accordion">
+                    <div class="card-body">
+                        <table class="table table-hover">
+                            <thead>
+                              <tr>
+                                <th scope="col">Rank</th>
+                                <th scope="col">Product</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Link</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                                {% for listItem in categoryData.list %}
+                                    <tr>
+                                        <th scope="row">{{ listItem.rank }}</th>
+                                        <td>{{ listItem.product }}</td>
+                                        <td>{{ listItem.price }}</td>
+                                        <td><a href="{{ listItem.link }}" target="_blank">Go to product</a></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                          </table>
+                    </div>
+                </div>
+            </div>
+        {% endwith %}
+    {% endfor %}
+</div>
+{% endblock %}
