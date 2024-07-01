@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Amazon Request List | MarketMinder{% endblock %}
+
+{% block content %}
+  <h1>Scrap Requests</h1>
+  <ul>
+    {% for scrap_request in scrap_requests %}
+      <li>
+        {{ scrap_request.country_code }} ({{ scrap_request.request_date }})
+        <span id="status-{{ scrap_request.id }}" class="status">
+          {% if scrap_request.status == 'COMPLETED' %}
+            <i class="fas fa-check-circle"></i>
+          {% else %}
+            <i class="fas fa-circle-notch fa-spin" data-pk="{{ scrap_request.id }}"></i>
+          {% endif %}
+        </span>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <script>
+    if(document.title === "Amazon Request List | MarketMinder"){
+      const spinningCircles = document.querySelectorAll('i.fa-circle-notch');
+
+    // Function to update status
+    function updateStatus(pk) {
+      const getStatusUrl = '{% url "get_scrap_request_status" pk="XXXX" %}'.replace('XXXX', pk);
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', getStatusUrl, true);
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          const data = JSON.parse(xhr.responseText);
+          if (data.status === 'COMPLETED') {
+            const statusElement = document.getElementById(`status-${pk}`);
+            statusElement.innerHTML = '<i class="fas fa-check-circle"></i>';
+          }
+        }
+      };
+      xhr.send();
+    }
+
+    // Initialize update status for each spinning circle
+    spinningCircles.forEach(circle => {
+      const pk = circle.dataset.pk;
+      updateStatus(pk);
+      setInterval(() => updateStatus(pk), 5000); // update every 5 seconds
+    });
+    }
+    
+  </script>
+{% endblock %}

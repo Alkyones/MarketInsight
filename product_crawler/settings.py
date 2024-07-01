@@ -38,8 +38,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'product_amazon_crawler.apps.ProductAmazonCrawlerConfig'
+    'product_amazon_crawler.apps.ProductAmazonCrawlerConfig',
+    'channels'
 ]
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
