@@ -1,6 +1,6 @@
-
 from django import forms
 from enum import Enum
+
 
 class CountryEnum(Enum):
     AU = {"country": "Australia", "url": "https://www.amazon.com.au"}
@@ -32,5 +32,13 @@ class CountryEnum(Enum):
 class AmazonCrawlerForm(forms.Form):
     region = forms.CharField(
         max_length=100,
-        widget=forms.Select(choices=[(e.url, e.country) for e in CountryEnum])
+        widget=forms.Select(choices=[(e.url, e.country) for e in CountryEnum]),
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['region'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Enter region'
+        })
+        self.fields['region'].label = ''

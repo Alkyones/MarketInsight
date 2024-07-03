@@ -1,6 +1,8 @@
 from django.urls import path
 from . import views
 
+app_name = 'amazon'
+
 urlpatterns = [
     path('', views.scrap_index, name='amazon'),
     path('list/', views.scraped_data_list, name='list'),

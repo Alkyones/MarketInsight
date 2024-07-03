@@ -4,6 +4,8 @@ import time
 from selenium import webdriver
 import  sys
 from .models import AmazonDataScrapCollection, ScrapRequest
+from bson import ObjectId
+
 url_bases = {
     "au": {"country": "Australia", "url": "https://www.amazon.com.au"},
     "ae": {"country": "United Arab Emirates", "url": "https://www.amazon.ae"},
@@ -61,58 +63,58 @@ def getLinksFromPage(driver):
 
 def getScrapedDataFromLinks(driver, url_base, links):
     scrapedTopList = []
-    # for link in links:
-    #     cleanedItems = []
+    for link in links:
+        cleanedItems = []
 
-    #     driver.get(link)
-    #     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    #     time.sleep(2)
+        driver.get(link)
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(2)
 
-    #     page_source = driver.page_source
-    #     soup = BeautifulSoup(page_source, "lxml")
+        page_source = driver.page_source
+        soup = BeautifulSoup(page_source, "lxml")
 
-    #     xpath_list = [
-    #         "/html/body/div[1]/div[2]/div/div/div[2]/div/div/div[2]/div[1]/span",
-    #         "/html/body/div[1]/div[1]/div[2]/div/div/div/div[2]/div/div[2]/div/div/div[2]/div[1]/span",
-    #     ]
+        xpath_list = [
+            "/html/body/div[1]/div[2]/div/div/div[2]/div/div/div[2]/div[1]/span",
+            "/html/body/div[1]/div[1]/div[2]/div/div/div/div[2]/div/div[2]/div/div/div[2]/div[1]/span",
+        ]
 
-    #     title = None
+        title = None
 
-    #     for xpath in xpath_list:
-    #         try:
-    #             title_element = driver.find_element("xpath", xpath)
-    #             title = title_element.text
-    #             break
-    #         except:
-    #             pass
+        for xpath in xpath_list:
+            try:
+                title_element = driver.find_element("xpath", xpath)
+                title = title_element.text
+                break
+            except:
+                pass
 
-    #     if title:
-    #         print("title: " + title)
-    #         items = soup.find_all("div", {"id": "gridItemRoot"})
-    #         for item in items:
-    #             spans = item.find_all("span")
-    #             rank = spans[0].text
-    #             description = spans[1].text
-    #             price = findPrice(item)
+        if title:
+            print("title: " + title)
+            items = soup.find_all("div", {"id": "gridItemRoot"})
+            for item in items:
+                spans = item.find_all("span")
+                rank = spans[0].text
+                description = spans[1].text
+                price = findPrice(item)
 
-    #             link = item.find("a", {"class": "a-link-normal"})
-    #             link = url_base + link["href"]
+                link = item.find("a", {"class": "a-link-normal"})
+                link = url_base + link["href"]
 
-    #             cleanedData = {
-    #                 "rank": rank,
-    #                 "product": description,
-    #                 "price": price,
-    #                 "link": link,
-    #             }
-    #             cleanedItems.append(cleanedData)
-    #         scrapedTopList.append({
-    #             "category": title,
-    #             "list": cleanedItems
-    #         })
-    #         time.sleep(4)
-    #     else:
-    #         print(title)
-    #         print("title is not found for link: ", link)
+                cleanedData = {
+                    "rank": rank,
+                    "product": description,
+                    "price": price,
+                    "link": link,
+                }
+                cleanedItems.append(cleanedData)
+            scrapedTopList.append({
+                "category": title,
+                "list": cleanedItems
+            })
+            time.sleep(4)
+        else:
+            print(title)
+            print("title is not found for link: ", link)
 
        
     AmazonDataScrapCollection.objects.create(data=scrapedTopList)
@@ -139,7 +141,7 @@ def scrapeData(url_base, scrape_request_id):
 
     scrapedData = getScrapedDataFromLinks(driver, url_base, linksList)
     if scrapedData:
-        ScrapRequest.objects.filter(id=scrape_request_id).update(status='COMPLETED')
+        ScrapRequest.objects.filter(_id=ObjectId(scrape_request_id)).update(status='COMPLETED')
         print("Data scraped successfully.")
     else:
         print("While scraping data an error occured please check the logs.")

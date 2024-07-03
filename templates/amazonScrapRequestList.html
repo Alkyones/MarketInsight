@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Amazon Request List | MarketMinder{% endblock %}
+
+{% block content %}
+    <h2 class="mb-4 text-info">Scrap Requests</h2>
+    <ul class="list-group">
+      {% for scrap_request in scrap_requests %}
+        <li class="list-group-item">
+          <div class="row">
+            <div class="col-md-9">
+              <h4>
+                <span style="background-color: #dff0d8; padding: 5px; border-radius: 5px;">
+                  {{ scrap_request.country_code }}
+                </span>
+                - {{ scrap_request.request_date }}
+              </h4>
+            </div>
+            <div class="col-md-3 text-right">
+              <span id="status-{{ scrap_request.id }}" class="status">
+                {% if scrap_request.status == 'COMPLETED' %}
+                  <i class="fas fa-check-circle text-success" style="font-size: 24px;"></i>
+                {% else %}
+                  <i class="fas fa-circle-notch fa-spin" data-pk="{{ scrap_request.id }}" style="font-size: 24px;"></i>
+                {% endif %}
+              </span>
+            </div>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <script>
+      if(document.title === "Amazon Request List | MarketMinder"){
+        const spinningCircles = document.querySelectorAll('i.fa-circle-notch');
+
+        // Function to update status
+        function updateStatus(pk) {
+          const getStatusUrl = '{% url "amazon:get_scrap_request_status" pk="XXXX" %}'.replace('XXXX', pk);
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', getStatusUrl, true);
+          xhr.onload = function() {
+            if (xhr.status === 200) {
+              const data = JSON.parse(xhr.responseText);
+              if (data.status === 'COMPLETED') {
+                const statusElement = document.getElementById(`status-${pk}`);
+                statusElement.innerHTML = '<i class="fas fa-check-circle text-success" style="font-size: 24px;"></i>';
+              }
+            }
+          };
+          xhr.send();
+        }
+
+        // Initialize update status for each spinning circle
+        spinningCircles.forEach(circle => {
+          const pk = circle.dataset.pk;
+          updateStatus(pk);
+          setInterval(() => updateStatus(pk), 5000); // update every 5 seconds
+        });
+      }
+    </script>
+{% endblock %}

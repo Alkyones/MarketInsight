@@ -11,26 +11,31 @@ def scrap_index(request):
         form = AmazonCrawlerForm(request.POST)
         if form.is_valid():
             region_url = form.cleaned_data['region']
+            print(region_url)
             scrap_request = ScrapRequest(country_code=region_url)
             scrap_request.save()
-            future = ThreadPoolExecutor(max_workers=1).submit(scrapeData, region_url, scrap_request.id)
-            return redirect('request-list')
+            future = ThreadPoolExecutor(max_workers=1).submit(scrapeData, region_url, scrap_request._id)
+            return redirect('amazon:request-list')
     else:
         form = AmazonCrawlerForm()
     return render(request, 'amazonScrap.html', {'form': form})
 
 def scrap_requests_list(request):
     scrap_requests = ScrapRequest.objects.all()
+    for scrap_request in scrap_requests:
+        scrap_request.id = str(scrap_request._id)
+        
     return render(request, 'amazonScrapRequestList.html', {'scrap_requests': scrap_requests})
 
 def get_scrap_request_status(request, pk):
-    scrap_request = ScrapRequest.objects.get(pk=pk)
+    scrap_request = ScrapRequest.objects.get(_id=ObjectId(pk))
     return JsonResponse({'status': scrap_request.status})
 
 def scraped_data_list(request):
     all_data = AmazonDataScrapCollection.objects.all()
     for data in all_data:
         data.id = str(data._id)
+        print(data)
     return render(request, 'amazonScrapList.html', {'data': all_data})
 
 def scraped_data_detail(request, _id):

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Amazon Scraper | MarketMinder{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h1 class="text-center text-info">Start Your Scraping Request</h1>
+    <p class="text-center">Enter your region below to start scraping Amazon products.</p>
+    <form method="post">
+      <div class="d-flex justify-content-center align-items-center form-container">
+        <form class="form-inline text-center" method="post">
+          {% csrf_token %}
+          {{ form.region }}
+          <button type="submit" class="submit-button btn btn-info">Scrap!</button>
+        </form>
+      </div>
+    </form>
+  </div>
+{% endblock %}
