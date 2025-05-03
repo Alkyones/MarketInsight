@@ -53,15 +53,16 @@ def getLinksFromList(data):
             links.append(link["href"])
     return links or False
 
-def getLinksFromPage(driver): 
-    findDivPartialClassName = driver.find_element("xpath" , " /html/body/div[1]/div[1]/div[2]/div/div/div/div[2]/div/div[2]/div/div/div[2]")
+def getLinksFromPage(driver):
+    print(driver.current_url)
+    findDivPartialClassName = driver.find_element("xpath" , " /html/body/div[1]/div[1]/div[2]/div/div/div/div[2]/div/div[1]/div/div")
     findAtags = findDivPartialClassName.find_elements(By.TAG_NAME, "a")
     links = [x.get_attribute("href")  for x in findAtags if x.get_attribute("href") != None]
     if len(links) == 0:
         links = False
     return links
 
-def getScrapedDataFromLinks(driver, url_base, links):
+def getScrapedDataFromLinks(driver, url_base, links, user):
     scrapedTopList = []
     for link in links:
         cleanedItems = []
@@ -74,7 +75,7 @@ def getScrapedDataFromLinks(driver, url_base, links):
         soup = BeautifulSoup(page_source, "lxml")
 
         xpath_list = [
-            "/html/body/div[1]/div[2]/div/div/div[2]/div/div/div[2]/div[1]/span",
+            "/html/body/div[1]/div[2]/div/div/div[1]/div/div/div[2]/div[1]/span",
             "/html/body/div[1]/div[1]/div[2]/div/div/div/div[2]/div/div[2]/div/div/div[2]/div[1]/span",
         ]
 
@@ -116,20 +117,21 @@ def getScrapedDataFromLinks(driver, url_base, links):
             print(title)
             print("title is not found for link: ", link)
 
-       
-    AmazonDataScrapCollection.objects.create(data=scrapedTopList)
+    scrapData = AmazonDataScrapCollection.objects.create(data=scrapedTopList, user=user)
     return True
+    
 
 
-def scrapeData(url_base, scrape_request_id):
+def scrapeData(url_base, scrape_request_id, user):
     if url_base == "https://www.amazon.co.uk":
         url = f"{url_base}/Best-Sellers/zgbs"
     else:
         url = f"{url_base}/gp/bestsellers"
-    print(url)
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
-    options.add_argument('suppress_console_output')
+    options.add_argument("--ignore-certificate-errors")
+    options.add_argument("--disable-web-security")
+    options.add_argument("--allow-running-insecure-content")
     driver = webdriver.Chrome(options=options)
     driver.get(url)
     driver.implicitly_wait(2)
@@ -139,10 +141,10 @@ def scrapeData(url_base, scrape_request_id):
         print("No links found")
         sys.exit()
 
-    scrapedData = getScrapedDataFromLinks(driver, url_base, linksList)
+    scrapedData = getScrapedDataFromLinks(driver, url_base, linksList, user)
     if scrapedData:
         ScrapRequest.objects.filter(_id=ObjectId(scrape_request_id)).update(status='COMPLETED')
-        print("Data scraped successfully.")
+        print(f"Data scraped successfully. {scrapedData['data']}")
     else:
         print("While scraping data an error occured please check the logs.")
     

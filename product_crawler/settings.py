@@ -14,9 +14,10 @@ from pathlib import Path
 import json
 import os
 
+CREDENTIALS_DIR = Path(__file__).resolve().parent.parent.parent
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-credentialsFile = Path.joinpath(BASE_DIR.parent, 'credentials/amazonPipeline.json')
+credentialsFile = Path.joinpath(CREDENTIALS_DIR .parent, 'credentials/amazonPipeline.json')
 credentials = json.load(open(credentialsFile))
 
 
@@ -41,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'product_amazon_crawler.apps.ProductAmazonCrawlerConfig',
     'main_page.apps.MainPageConfig',
+    'accounts.apps.AccountsConfig'  
 ]
 
 CHANNEL_LAYERS = {
@@ -60,7 +62,6 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'product_crawler.urls'
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -82,7 +83,6 @@ WSGI_APPLICATION = 'product_crawler.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'djongo',
@@ -93,9 +93,6 @@ DATABASES = {
     }
 }
 
-
-# Password validation
-# https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
