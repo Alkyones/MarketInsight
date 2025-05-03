@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from.forms import AmazonCrawlerForm
-from.models import AmazonDataScrapCollection, ScrapRequest
+from.models import AmazonDataScrapCollection, ScrapRequest, AmazonDataScrapCountry
 from bson import ObjectId
 from.functions import *
 from concurrent.futures import ThreadPoolExecutor
@@ -15,11 +15,12 @@ def scrap_index(request):
     if request.method == 'POST':
         form = AmazonCrawlerForm(request.POST)
         if form.is_valid():
-            region_url = form.cleaned_data['region']
+            region_id = form.cleaned_data['region']
             reason = form.cleaned_data['reason']
-            scrap_request = ScrapRequest(country_code=region_url, request_reason=reason, user=user_instance)
+            regionData = AmazonDataScrapCountry.objects.get(_id=ObjectId(region_id))
+            scrap_request = ScrapRequest(country_code=regionData.country_code, request_reason=reason, user=user_instance)
             scrap_request.save()
-            future = ThreadPoolExecutor(max_workers=1).submit(scrapeData, region_url, scrap_request._id, user_instance)
+            ThreadPoolExecutor(max_workers=2).submit(scrapeData, regionData, scrap_request._id, user_instance)
             return redirect('amazon:request-list')
     else:
         form = AmazonCrawlerForm()

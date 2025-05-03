@@ -46,6 +46,21 @@ class AmazonDataScrapCollection(models.Model):
         request = ScrapRequest.objects.get(_id=self.request._id)
         return request
 
-            
+
+class AmazonDataScrapCountry(models.Model):
+    _id = models.ObjectIdField()
+    country_code = models.CharField(max_length=2, unique=True)
+    country_name = models.CharField(max_length=100)
+    url = models.URLField()
+    navbar_xpath = models.CharField(max_length=255, default='')
+    link_xpath = models.CharField(max_length=255, default='')
     
+    def __str__(self):
+        return f"{self.country_code} - {self.country_name} - {self.url}"
     
+    class Meta:
+        verbose_name = "Amazon Data Scrap Country"
+        verbose_name_plural = "Amazon Data Scrap Countries"
+        
+    def __repr__(self):
+        return f"AmazonDataScrapCountry(_id={self._id}, country_code={self.country_code}, country_name={self.country_name}, url={self.url})" 

@@ -2,12 +2,17 @@ from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 import time
 from selenium import webdriver
-import  sys
+import sys
 from .models import AmazonDataScrapCollection, ScrapRequest
 from bson import ObjectId
 
 url_bases = {
-    "au": {"country": "Australia", "url": "https://www.amazon.com.au"},
+    "au": {
+        "country": "Australia",
+        "url": "https://www.amazon.com.au",
+        "navbarXpath": "/html/body/div[1]/div[1]/div[2]/div/div/div/div[2]/div/div[1]/div/div",
+        "linkXpath": "/html/body/div[1]/div[2]/div/div/div[1]/div/div/div[2]/div[1]/span",
+    },
     "ae": {"country": "United Arab Emirates", "url": "https://www.amazon.ae"},
     "br": {"country": "Brazil", "url": "https://www.amazon.com.br"},
     "ca": {"country": "Canada", "url": "https://www.amazon.ca"},
@@ -26,24 +31,24 @@ url_bases = {
 }
 
 
-
 def findPrice(item):
 
-    if(item.find("span", {"class": "a-color-price"})):
+    if item.find("span", {"class": "a-color-price"}):
         price = item.find("span", {"class": "a-color-price"}).text
         return price
-    
-    if(item.find("span", {"class": "a-size-base"})):
+
+    if item.find("span", {"class": "a-size-base"}):
         price = item.select('span[class*="sc-price"]')[0].text
         return price
-    
-    if(item.find("span", {"class": "a-color-secondary"})):
-        priceTextsRaw = item.find("span", {"class": "a-color-secondary"})               
+
+    if item.find("span", {"class": "a-color-secondary"}):
+        priceTextsRaw = item.find("span", {"class": "a-color-secondary"})
         price = priceTextsRaw.text
-        
+
         return price
 
     return None
+
 
 def getLinksFromList(data):
     links = []
@@ -53,16 +58,28 @@ def getLinksFromList(data):
             links.append(link["href"])
     return links or False
 
-def getLinksFromPage(driver):
-    print(driver.current_url)
-    findDivPartialClassName = driver.find_element("xpath" , " /html/body/div[1]/div[1]/div[2]/div/div/div/div[2]/div/div[1]/div/div")
+
+def getLinksFromPage(driver, regionData):
+    xpath = regionData.navbar_xpath
+    findDivPartialClassName = driver.find_element(
+        "xpath",
+        xpath,
+    )
+    if not findDivPartialClassName:
+        print("No links found")
+        return False
     findAtags = findDivPartialClassName.find_elements(By.TAG_NAME, "a")
-    links = [x.get_attribute("href")  for x in findAtags if x.get_attribute("href") != None]
+    links = [
+        x.get_attribute("href") for x in findAtags if x.get_attribute("href") != None
+    ]
+    # print("Links found: ", len(links), " links: ", links)
     if len(links) == 0:
-        links = False
+        print("No links found")
+        return False
     return links
 
-def getScrapedDataFromLinks(driver, url_base, links, user):
+
+def getScrapedDataFromLinks(driver, regionData, url_base, links, user, scrape_request_id):
     scrapedTopList = []
     for link in links:
         cleanedItems = []
@@ -74,20 +91,17 @@ def getScrapedDataFromLinks(driver, url_base, links, user):
         page_source = driver.page_source
         soup = BeautifulSoup(page_source, "lxml")
 
-        xpath_list = [
-            "/html/body/div[1]/div[2]/div/div/div[1]/div/div/div[2]/div[1]/span",
-            "/html/body/div[1]/div[1]/div[2]/div/div/div/div[2]/div/div[2]/div/div/div[2]/div[1]/span",
-        ]
-
+        xpath = regionData.link_xpath
+        print("xpath: ", xpath)
         title = None
 
-        for xpath in xpath_list:
-            try:
-                title_element = driver.find_element("xpath", xpath)
-                title = title_element.text
-                break
-            except:
-                pass
+        
+        try:
+            title_element = driver.find_element("xpath", xpath)
+            title = title_element.text
+        except:
+            print("No title found")
+            title = None
 
         if title:
             print("title: " + title)
@@ -108,21 +122,22 @@ def getScrapedDataFromLinks(driver, url_base, links, user):
                     "link": link,
                 }
                 cleanedItems.append(cleanedData)
-            scrapedTopList.append({
-                "category": title,
-                "list": cleanedItems
-            })
+            scrapedTopList.append({"category": title, "list": cleanedItems})
             time.sleep(4)
         else:
             print(title)
             print("title is not found for link: ", link)
 
-    scrapData = AmazonDataScrapCollection.objects.create(data=scrapedTopList, user=user, request=ScrapRequest.objects.get(_id=ObjectId(scrape_request_id)))
+    scrapData = AmazonDataScrapCollection.objects.create(
+        data=scrapedTopList,
+        user=user,
+        request=ScrapRequest.objects.get(_id=ObjectId(scrape_request_id)),
+    )
     return True
-    
 
 
-def scrapeData(url_base, scrape_request_id, user):
+def scrapeData(regionData, scrape_request_id, user):
+    url_base = regionData.url
     if url_base == "https://www.amazon.co.uk":
         url = f"{url_base}/Best-Sellers/zgbs"
     else:
@@ -136,20 +151,27 @@ def scrapeData(url_base, scrape_request_id, user):
     driver.get(url)
     driver.implicitly_wait(2)
     print("Getting the data")
-    linksList = getLinksFromPage(driver)
+    linksList = getLinksFromPage(driver, regionData)
     if not linksList:
-        print("No links found")
+        ScrapRequest.objects.filter(_id=ObjectId(scrape_request_id)).update(
+            status="FAILED"
+        )
         sys.exit()
 
-    scrapedData = getScrapedDataFromLinks(driver, url_base, linksList, user, scrape_request_id)
+    scrapedData = getScrapedDataFromLinks(
+        driver, regionData, url_base, linksList, user, scrape_request_id
+    )
     if scrapedData:
-        ScrapRequest.objects.filter(_id=ObjectId(scrape_request_id)).update(status='COMPLETED')
+        ScrapRequest.objects.filter(_id=ObjectId(scrape_request_id)).update(
+            status="COMPLETED"
+        )
         print(f"Data scraped successfully. {scrapedData['data']}")
         driver.quit()
         return True
     else:
         print("While scraping data an error occured please check the logs.")
-        ScrapRequest.objects.filter(_id=ObjectId(scrape_request_id)).update(status='FAILED')
+        ScrapRequest.objects.filter(_id=ObjectId(scrape_request_id)).update(
+            status="FAILED"
+        )
         driver.quit()
         return False
-    
