@@ -16,6 +16,16 @@ class ScrapRequest(models.Model):
     request_date = models.DateTimeField(auto_now_add=True)
     request_reason = models.CharField(max_length=255, default='Request reason not provided.')
     status = models.CharField(max_length=10, default=ScrapRequestStatus.PENDING.value)
+    
+    def __str__(self):
+        return f"{self._id} - {self.user} - {self.country_code} - {self.request_date.strftime("%d-%m-%Y")} - {self.request_reason} - {self.status}"
+    class Meta:
+        verbose_name = "Scrap Request"
+        verbose_name_plural = "Scrap Requests"
+        
+    def __repr__(self):
+        return f"ScrapRequest(_id={self._id}, user={self.user}, country_code={self.country_code}, request_date={self.request_date}, request_reason={self.request_reason}, status={self.status})"
+    
 class AmazonDataScrapCollection(models.Model):
     _id = models.ObjectIdField()
     request = models.ForeignKey(ScrapRequest, on_delete=models.CASCADE, default=None)
@@ -24,7 +34,7 @@ class AmazonDataScrapCollection(models.Model):
     created_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return str(self._id)
+        return f"{self._id}  - {self.user}  - {self.created_at.strftime("%d-%m-%Y %H:%M:%S")}"
     class Meta:
         verbose_name = "Amazon Data Scrap Collection"
         verbose_name_plural = "Amazon Data Scrap Collections"
