@@ -6,7 +6,7 @@ def check_pool_and_run():
     from .models import ScrapRequest, AmazonDataScrapCountry
     from django.contrib.auth.models import User
     from .functions import scrapeData
-    pool = ThreadPoolExecutor(max_workers=2)
+    pool = ThreadPoolExecutor(max_workers=1)
     while True:
         # Check if the pool is idle
         if pool._work_queue.empty():

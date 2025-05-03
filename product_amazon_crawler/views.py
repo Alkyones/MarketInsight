@@ -20,7 +20,7 @@ def scrap_index(request):
             regionData = AmazonDataScrapCountry.objects.get(_id=ObjectId(region_id))
             scrap_request = ScrapRequest(country_code=regionData.country_code, request_reason=reason, user=user_instance)
             scrap_request.save()
-            ThreadPoolExecutor(max_workers=2).submit(scrapeData, regionData, scrap_request._id, user_instance)
+            ThreadPoolExecutor(max_workers=1).submit(scrapeData, regionData, scrap_request._id, user_instance)
             return redirect('amazon:request-list')
     else:
         form = AmazonCrawlerForm()
