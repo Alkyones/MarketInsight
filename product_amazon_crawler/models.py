@@ -14,6 +14,7 @@ class ScrapRequest(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, default=None)
     country_code = models.CharField(max_length=2)
     request_date = models.DateTimeField(auto_now_add=True)
+    request_reason = models.CharField(max_length=255, default='')
     status = models.CharField(max_length=10, default=ScrapRequestStatus.PENDING.value)
 class AmazonDataScrapCollection(models.Model):
     _id = models.ObjectIdField()
