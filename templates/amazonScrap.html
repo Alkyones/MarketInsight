@@ -3,17 +3,32 @@
 {% block title %}Amazon Scraper | MarketInsight{% endblock %}
 
 {% block content %}
-  <div class="container">
-    <h1 class="text-center text-info">Start Your Scraping Request</h1>
-    <p class="text-center">Enter your region below to start scraping Amazon products.</p>
-    <form method="post">
-      <div class="d-flex justify-content-center align-items-center form-container">
-        <form class="form-inline text-center" method="post">
-          {% csrf_token %}
-          {{ form.region }}
-          <button type="submit" class="submit-button btn btn-info">Scrap!</button>
-        </form>
+  <div class="container py-5">
+    <div class="text-center mb-4">
+      <h1 class="text-primary fw-bold">Start Your Scraping Request</h1>
+      <p class="text-muted fs-5">Enter your region and reason below to start scraping Amazon products.</p>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card border-0 shadow-lg">
+          <div class="card-body p-4">
+            <form method="post" class="needs-validation" novalidate>
+              {% csrf_token %}
+              <div class="form-group mb-3">
+                <label for="id_region" class="form-label text-primary">Region</label>
+                {{ form.region }}
+              </div>
+              <div class="form-group mb-3">
+                <label for="id_reason" class="form-label text-primary">Reason</label>
+                {{ form.reason }}
+              </div>
+              <div class="text-center">
+                <button type="submit" class="btn btn-primary btn-lg">Start Scraping</button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
-    </form>
+    </div>
   </div>
 {% endblock %}

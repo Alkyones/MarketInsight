@@ -117,7 +117,7 @@ def getScrapedDataFromLinks(driver, url_base, links, user):
             print(title)
             print("title is not found for link: ", link)
 
-    scrapData = AmazonDataScrapCollection.objects.create(data=scrapedTopList, user=user)
+    scrapData = AmazonDataScrapCollection.objects.create(data=scrapedTopList, user=user, request=ScrapRequest.objects.get(_id=ObjectId(scrape_request_id)))
     return True
     
 
@@ -141,10 +141,15 @@ def scrapeData(url_base, scrape_request_id, user):
         print("No links found")
         sys.exit()
 
-    scrapedData = getScrapedDataFromLinks(driver, url_base, linksList, user)
+    scrapedData = getScrapedDataFromLinks(driver, url_base, linksList, user, scrape_request_id)
     if scrapedData:
         ScrapRequest.objects.filter(_id=ObjectId(scrape_request_id)).update(status='COMPLETED')
         print(f"Data scraped successfully. {scrapedData['data']}")
+        driver.quit()
+        return True
     else:
         print("While scraping data an error occured please check the logs.")
+        ScrapRequest.objects.filter(_id=ObjectId(scrape_request_id)).update(status='FAILED')
+        driver.quit()
+        return False
     

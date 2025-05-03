@@ -34,6 +34,10 @@ class AmazonCrawlerForm(forms.Form):
         max_length=100,
         widget=forms.Select(choices=[(e.url, e.country) for e in CountryEnum]),
     )
+    reason = forms.CharField(
+        max_length=255,
+        widget=forms.TextInput(attrs={"placeholder": "Enter note for scraping"}),
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -41,4 +45,10 @@ class AmazonCrawlerForm(forms.Form):
             'class': 'form-control',
             'placeholder': 'Enter region'
         })
+        self.fields['region'].widget.choices = [(e.url, e.country) for e in CountryEnum]
         self.fields['region'].label = ''
+        self.fields['reason'].widget.attrs.update({
+            'class': 'form-control',
+            'placeholder': 'Enter note for scraping'
+        })
+        self.fields['reason'].label = ''

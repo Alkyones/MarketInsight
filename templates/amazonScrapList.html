@@ -17,7 +17,7 @@
         {% for el in data %}
             <tr>
                 <th scope="row">{{el.created_at}}</th>
-                <td>Data scraped from Amazon on request.</td>
+                <td scope="row">{{el.request.request_reason}}</td>
                 <td><a class="btn btn-warning" href="{% url 'amazon:detail' el.id %}">Details</a></td>
             </tr>
         {% endfor %}
