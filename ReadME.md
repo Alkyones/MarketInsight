@@ -17,6 +17,57 @@ Django Based Web Application For Automating Scraping Data
 - Excel export for scraped data.
 - Different scraping methods for getting different kind of data for user needs.
 
+  
+# How to Run the Project
+
+1. **Clone the repository:**
+	```bash
+	git clone <repository-url>
+	cd MarketInsight
+	```
+
+2. **Create and activate a virtual environment (recommended):**
+	```bash
+	python -m venv venv
+	source venv/bin/activate  # On Windows: venv\Scripts\activate
+	```
+
+3. **Install dependencies:**
+	```bash
+	pip install -r requirements.txt
+	```
+
+4. **Apply migrations:**
+	```bash
+	python manage.py migrate
+	```
+
+5. **Create a superuser (optional, for admin access):**
+	```bash
+	python manage.py createsuperuser
+	```
+
+6. **Run the development server:**
+	```bash
+	python manage.py runserver
+	```
+
+# How to Test
+
+To run the test suite and ensure everything is working as expected:
+
+```bash
+python manage.py test
+```
+
+You can also run tests for a specific app:
+
+```bash
+python manage.py test <app_name>
+```
+
+Replace `<app_name>` with `accounts`, `main_page`, or `product_amazon_crawler` as needed.
+
 # Main Page
 - Main page allows users to navigate through platform easily, here they can go to check their scrap requests, their status, and scraped data's detail.
 ![preview](/static/assets/main_page.png)
