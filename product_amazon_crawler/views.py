@@ -3,8 +3,6 @@ from django.http import JsonResponse
 from.forms import AmazonCrawlerForm
 from.models import AmazonDataScrapCollection, ScrapRequest, AmazonDataScrapCountry
 from bson import ObjectId
-from product_amazon_crawler.functions import scrapeData
-from concurrent.futures import ThreadPoolExecutor
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.serializers import serialize

@@ -9,7 +9,7 @@ from .models import AmazonDataScrapCollection, ScrapRequest
 from bson import ObjectId
 
 
-def findPrice(item):
+def find_price(item):
 
     if item.find("span", {"class": "a-color-price"}):
         price = item.find("span", {"class": "a-color-price"}).text
@@ -20,50 +20,41 @@ def findPrice(item):
         return price
 
     if item.find("span", {"class": "a-color-secondary"}):
-        priceTextsRaw = item.find("span", {"class": "a-color-secondary"})
-        price = priceTextsRaw.text
+        price_text_raw = item.find("span", {"class": "a-color-secondary"})
+        price = price_text_raw.text
 
         return price
 
     return None
 
 
-def getLinksFromList(data):
-    links = []
-    for el in data:
-        link = el.find("a")
-        if link:
-            links.append(link["href"])
-    return links or False
 
-
-def getLinksFromPage(driver, regionData):
-    xpath = regionData.navbar_xpath
+def get_links_from_page(driver, region_data):
+    xpath = region_data.navbar_xpath
     try:
         wait = WebDriverWait(driver, 15)
-        findDivPartialClassName = wait.until(EC.presence_of_element_located((By.XPATH, xpath)))
+        find_div_partial_class_name = wait.until(EC.presence_of_element_located((By.XPATH, xpath)))
     except Exception:
         print("No links found (timeout)")
         return False
-    findAtags = findDivPartialClassName.find_elements(By.TAG_NAME, "a")
+    find_a_tags = find_div_partial_class_name.find_elements(By.TAG_NAME, "a")
     links = [
-        x.get_attribute("href") for x in findAtags if x.get_attribute("href") != None
+        x.get_attribute("href") for x in find_a_tags if x.get_attribute("href") != None
     ]
-    print("Links found: ", len(links), " links: ", links)
     if len(links) == 0:
         print("No links found")
         return False
     return links
 
 
-def getScrapedDataFromLinks(driver, regionData, url_base, links, user, scrape_request_id):
-    scrapedTopList = []
+def get_scraped_data_from_links(driver, region_data, url_base, links, user, scrape_request_id):
+    scraped_top_list = []
     for link in links:
         cleaned_items = []
 
         driver.get(link)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        xpath = regionData.link_xpath
+        xpath = region_data.link_xpath
         title = None
         try:
             wait = WebDriverWait(driver, 15)
@@ -79,7 +70,7 @@ def getScrapedDataFromLinks(driver, regionData, url_base, links, user, scrape_re
                 spans = item.find_all("span")
                 rank = spans[0].text
                 description = spans[1].text
-                price = findPrice(item)
+                price = find_price(item)
 
                 link = item.find("a", {"class": "a-link-normal"})
                 link = url_base + link["href"]
@@ -91,22 +82,21 @@ def getScrapedDataFromLinks(driver, regionData, url_base, links, user, scrape_re
                     "link": link,
                 }
                 cleaned_items.append(cleaned_data)
-            scrapedTopList.append({"category": title, "list": cleaned_items})
+            scraped_top_list.append({"category": title, "list": cleaned_items})
             driver.implicitly_wait(2)
         else:
-            print(title)
             print("title is not found for link: ", link)
-        
+        break
 
     AmazonDataScrapCollection.objects.create(
-        data=scrapedTopList,
+        data=scraped_top_list,
         user=user,
         request=ScrapRequest.objects.get(_id=ObjectId(scrape_request_id)),
     )
     return True
 
 
-def scrapeData(region_data, scrape_request_id, user):
+def scrape_data(region_data, scrape_request_id, user):
     url_base = region_data.url
     if url_base == "https://www.amazon.co.uk":
         url = f"{url_base}/Best-Sellers/zgbs"
@@ -122,14 +112,14 @@ def scrapeData(region_data, scrape_request_id, user):
     driver.get(url)
     driver.implicitly_wait(10)
     print("Getting the data")
-    link_list = getLinksFromPage(driver, region_data)
+    link_list = get_links_from_page(driver, region_data)
     if not link_list:
         ScrapRequest.objects.filter(_id=ObjectId(scrape_request_id)).update(
             status="FAILED"
         )
         sys.exit()
 
-    scraped_data = getScrapedDataFromLinks(
+    scraped_data = get_scraped_data_from_links(
         driver, region_data, url_base, link_list, user, scrape_request_id
     )
     if scraped_data:
