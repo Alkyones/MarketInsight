@@ -1,34 +1,12 @@
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import time
 from selenium import webdriver
 import sys
 from .models import AmazonDataScrapCollection, ScrapRequest
 from bson import ObjectId
-
-url_bases = {
-    "au": {
-        "country": "Australia",
-        "url": "https://www.amazon.com.au",
-        "navbarXpath": "/html/body/div[1]/div[1]/div[2]/div/div/div/div[2]/div/div[1]/div/div",
-        "linkXpath": "/html/body/div[1]/div[2]/div/div/div[1]/div/div/div[2]/div[1]/span",
-    },
-    "ae": {"country": "United Arab Emirates", "url": "https://www.amazon.ae"},
-    "br": {"country": "Brazil", "url": "https://www.amazon.com.br"},
-    "ca": {"country": "Canada", "url": "https://www.amazon.ca"},
-    "cn": {"country": "China", "url": "https://www.amazon.cn"},
-    "de": {"country": "Germany", "url": "https://www.amazon.de"},
-    "es": {"country": "Spain", "url": "https://www.amazon.es"},
-    "fr": {"country": "France", "url": "https://www.amazon.fr"},
-    "in": {"country": "India", "url": "https://www.amazon.in"},
-    "it": {"country": "Italy", "url": "https://www.amazon.it"},
-    "jp": {"country": "Japan", "url": "https://www.amazon.co.jp"},
-    "mx": {"country": "Mexico", "url": "https://www.amazon.com.mx"},
-    "sg": {"country": "Singapore", "url": "https://www.amazon.sg"},
-    "tr": {"country": "Turkey", "url": "https://www.amazon.com.tr"},
-    "uk": {"country": "United Kingdom", "url": "https://www.amazon.co.uk"},
-    "us": {"country": "United States", "url": "https://www.amazon.com"},
-}
 
 
 def findPrice(item):
@@ -61,18 +39,17 @@ def getLinksFromList(data):
 
 def getLinksFromPage(driver, regionData):
     xpath = regionData.navbar_xpath
-    findDivPartialClassName = driver.find_element(
-        "xpath",
-        xpath,
-    )
-    if not findDivPartialClassName:
-        print("No links found")
+    try:
+        wait = WebDriverWait(driver, 15)
+        findDivPartialClassName = wait.until(EC.presence_of_element_located((By.XPATH, xpath)))
+    except Exception:
+        print("No links found (timeout)")
         return False
     findAtags = findDivPartialClassName.find_elements(By.TAG_NAME, "a")
     links = [
         x.get_attribute("href") for x in findAtags if x.get_attribute("href") != None
     ]
-    # print("Links found: ", len(links), " links: ", links)
+    print("Links found: ", len(links), " links: ", links)
     if len(links) == 0:
         print("No links found")
         return False
@@ -82,29 +59,21 @@ def getLinksFromPage(driver, regionData):
 def getScrapedDataFromLinks(driver, regionData, url_base, links, user, scrape_request_id):
     scrapedTopList = []
     for link in links:
-        cleanedItems = []
+        cleaned_items = []
 
         driver.get(link)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(2)
-
+        xpath = regionData.link_xpath
+        title = None
+        try:
+            wait = WebDriverWait(driver, 15)
+            title_element = wait.until(EC.presence_of_element_located((By.XPATH, xpath)))
+            title = title_element.text.strip()
+        except Exception:
+            title = None
         page_source = driver.page_source
         soup = BeautifulSoup(page_source, "lxml")
-
-        xpath = regionData.link_xpath
-        print("xpath: ", xpath)
-        title = None
-
-        
-        try:
-            title_element = driver.find_element("xpath", xpath)
-            title = title_element.text
-        except:
-            print("No title found")
-            title = None
-
         if title:
-            print("title: " + title)
             items = soup.find_all("div", {"id": "gridItemRoot"})
             for item in items:
                 spans = item.find_all("span")
@@ -115,20 +84,21 @@ def getScrapedDataFromLinks(driver, regionData, url_base, links, user, scrape_re
                 link = item.find("a", {"class": "a-link-normal"})
                 link = url_base + link["href"]
 
-                cleanedData = {
+                cleaned_data = {
                     "rank": rank,
                     "product": description,
                     "price": price,
                     "link": link,
                 }
-                cleanedItems.append(cleanedData)
-            scrapedTopList.append({"category": title, "list": cleanedItems})
-            time.sleep(4)
+                cleaned_items.append(cleaned_data)
+            scrapedTopList.append({"category": title, "list": cleaned_items})
+            driver.implicitly_wait(2)
         else:
             print(title)
             print("title is not found for link: ", link)
+        
 
-    scrapData = AmazonDataScrapCollection.objects.create(
+    AmazonDataScrapCollection.objects.create(
         data=scrapedTopList,
         user=user,
         request=ScrapRequest.objects.get(_id=ObjectId(scrape_request_id)),
@@ -136,36 +106,37 @@ def getScrapedDataFromLinks(driver, regionData, url_base, links, user, scrape_re
     return True
 
 
-def scrapeData(regionData, scrape_request_id, user):
-    url_base = regionData.url
+def scrapeData(region_data, scrape_request_id, user):
+    url_base = region_data.url
     if url_base == "https://www.amazon.co.uk":
         url = f"{url_base}/Best-Sellers/zgbs"
     else:
         url = f"{url_base}/gp/bestsellers"
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
     options.add_argument("--ignore-certificate-errors")
     options.add_argument("--disable-web-security")
     options.add_argument("--allow-running-insecure-content")
+    options.add_argument("--log-level=3")
+    options.add_argument("--headless")
     driver = webdriver.Chrome(options=options)
     driver.get(url)
-    driver.implicitly_wait(2)
+    driver.implicitly_wait(10)
     print("Getting the data")
-    linksList = getLinksFromPage(driver, regionData)
-    if not linksList:
+    link_list = getLinksFromPage(driver, region_data)
+    if not link_list:
         ScrapRequest.objects.filter(_id=ObjectId(scrape_request_id)).update(
             status="FAILED"
         )
         sys.exit()
 
-    scrapedData = getScrapedDataFromLinks(
-        driver, regionData, url_base, linksList, user, scrape_request_id
+    scraped_data = getScrapedDataFromLinks(
+        driver, region_data, url_base, link_list, user, scrape_request_id
     )
-    if scrapedData:
+    if scraped_data:
         ScrapRequest.objects.filter(_id=ObjectId(scrape_request_id)).update(
             status="COMPLETED"
         )
-        print(f"Data scraped successfully. {scrapedData['data']}")
+        print("Data scraped successfully.")
         driver.quit()
         return True
     else:

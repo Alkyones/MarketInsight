@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from.forms import AmazonCrawlerForm
 from.models import AmazonDataScrapCollection, ScrapRequest, AmazonDataScrapCountry
 from bson import ObjectId
-from.functions import *
+from product_amazon_crawler.functions import scrapeData
 from concurrent.futures import ThreadPoolExecutor
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -17,10 +17,9 @@ def scrap_index(request):
         if form.is_valid():
             region_id = form.cleaned_data['region']
             reason = form.cleaned_data['reason']
-            regionData = AmazonDataScrapCountry.objects.get(_id=ObjectId(region_id))
-            scrap_request = ScrapRequest(country_code=regionData.country_code, request_reason=reason, user=user_instance)
+            region_data = AmazonDataScrapCountry.objects.get(_id=ObjectId(region_id))
+            scrap_request = ScrapRequest(country_code=region_data.country_code, request_reason=reason, user=user_instance)
             scrap_request.save()
-            ThreadPoolExecutor(max_workers=1).submit(scrapeData, regionData, scrap_request._id, user_instance)
             return redirect('amazon:request-list')
     else:
         form = AmazonCrawlerForm()
@@ -34,8 +33,9 @@ def scrap_requests_list(request):
         
     return render(request, 'amazonScrapRequestList.html', {'scrap_requests': scrap_requests})
 
+
 def get_scrap_request_status(request, pk):
-    scrap_request = ScrapRequest.objects.get(_id=ObjectId(pk))
+    scrap_request = ScrapRequest.objects.get(_id=ObjectId(pk), user=request.user)
     return JsonResponse({'status': scrap_request.status})
 
 @login_required
