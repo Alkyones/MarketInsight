@@ -86,7 +86,6 @@ def get_scraped_data_from_links(driver, region_data, url_base, links, user, scra
             driver.implicitly_wait(2)
         else:
             print("title is not found for link: ", link)
-        break
 
     AmazonDataScrapCollection.objects.create(
         data=scraped_top_list,
