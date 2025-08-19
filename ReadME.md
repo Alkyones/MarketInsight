@@ -8,7 +8,7 @@ Django Based Web Application For Automating Scraping Data
 - Threading for handling multiple scrap processes.
 
 # Upcoming Releases
-- Local marketplace's integration
+- Local marketplace's integration (Ebay, Hepsiburada)
 - Major upgrade in UI.
 - Better visibility over scraped data.
 - Safari support for Apple users.
