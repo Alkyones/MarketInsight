@@ -20,13 +20,8 @@ Django Based Web Application For Automating Scraping Data
   
 # How to Run the Project
 
-1. **Clone the repository:**
-	```bash
-	git clone <repository-url>
-	cd MarketInsight
-	```
 
-2. **Create and activate a virtual environment (recommended):**
+1. **Create and activate a virtual environment (recommended):**
 	```bash
 	python -m venv venv
 	source venv/bin/activate  # On Windows: venv\Scripts\activate
