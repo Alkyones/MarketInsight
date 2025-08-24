@@ -13,7 +13,7 @@ Django Based Web Application For Automating Scraping Data
 - Required files for docker has been added to the project.
 
 # Upcoming Releases
-- Local marketplace's integration
+- Local marketplace's integration (Ebay, Hepsiburada)
 - Major upgrade in UI.
 - Better visibility over scraped data.
 - Safari support for Apple users.
@@ -22,10 +22,51 @@ Django Based Web Application For Automating Scraping Data
 - Excel export for scraped data.
 - Different scraping methods for getting different kind of data for user needs.
 
-# For Running The Project
-- Be sure you installed the requirements.txt
-- Docker and the container has been created
-- Run the celery worker with command ``` celery -A product_crawler worker --loglevel=info -P solo ``` (Not required if you build with docker)
+  
+# How to Run the Project
+
+
+1. **Create and activate a virtual environment (recommended):**
+	```bash
+	python -m venv venv
+	source venv/bin/activate  # On Windows: venv\Scripts\activate
+	```
+
+3. **Install dependencies:**
+	```bash
+	pip install -r requirements.txt
+	```
+
+4. **Apply migrations:**
+	```bash
+	python manage.py migrate
+	```
+
+5. **Create a superuser (optional, for admin access):**
+	```bash
+	python manage.py createsuperuser
+	```
+
+6. **Run the development server:**
+	```bash
+	python manage.py runserver
+	```
+
+# How to Test
+
+To run the test suite and ensure everything is working as expected:
+
+```bash
+python manage.py test
+```
+
+You can also run tests for a specific app:
+
+```bash
+python manage.py test <app_name>
+```
+
+Replace `<app_name>` with `accounts`, `main_page`, or `product_amazon_crawler` as needed.
 
 # Main Page
 - Main page allows users to navigate through platform easily, here they can go to check their scrap requests, their status, and scraped data's detail.
