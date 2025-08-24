@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
+
+from product_amazon_crawler.tasks import scrape_request_task
 from.forms import AmazonCrawlerForm
 from.models import AmazonDataScrapCollection, ScrapRequest, AmazonDataScrapCountry
 from bson import ObjectId
@@ -18,6 +20,7 @@ def scrap_index(request):
             region_data = AmazonDataScrapCountry.objects.get(_id=ObjectId(region_id))
             scrap_request = ScrapRequest(country_code=region_data.country_code, request_reason=reason, user=user_instance)
             scrap_request.save()
+            scrape_request_task.delay(str(scrap_request._id))
             return redirect('amazon:request-list')
     else:
         form = AmazonCrawlerForm()
@@ -34,7 +37,7 @@ def scrap_requests_list(request):
 
 def get_scrap_request_status(request, pk):
     scrap_request = ScrapRequest.objects.get(_id=ObjectId(pk), user=request.user)
-    return JsonResponse({'status': scrap_request.status})
+    return JsonResponse({'status': scrap_request.status, 'id': str(scrap_request._id)})
 
 @login_required
 def scraped_data_list(request):
@@ -55,5 +58,15 @@ def scraped_data_detail(request, _id):
 def scraped_data_detail_json(request, _id):
     object_id = ObjectId(_id)
     scraped_data = AmazonDataScrapCollection.objects.get(_id=object_id, user=request.user)
-    serializer = serialize('json', scraped_data.data)
-    return JsonResponse(serializer)
+    # Convert ObjectId in data to str if present
+    import json
+    def convert_objid(obj):
+        if isinstance(obj, dict):
+            return {k: convert_objid(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert_objid(i) for i in obj]
+        elif str(type(obj)) == "<class 'bson.objectid.ObjectId'>":
+            return str(obj)
+        return obj
+    safe_data = convert_objid(scraped_data.data)
+    return JsonResponse({'data': safe_data, '_id': str(scraped_data._id)})

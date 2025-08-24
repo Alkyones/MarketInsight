@@ -7,6 +7,11 @@ Django Based Web Application For Automating Scraping Data
 - Stylized User Interface for better experience.
 - Threading for handling multiple scrap processes.
 
+# V2 Release
+- Scraping stabilised
+- Thread removed and Celery implemented.
+- Required files for docker has been added to the project.
+
 # Upcoming Releases
 - Local marketplace's integration
 - Major upgrade in UI.
@@ -16,6 +21,11 @@ Django Based Web Application For Automating Scraping Data
 - Premium scraps that allows users to scrap the data the way they want and reshape on flight.
 - Excel export for scraped data.
 - Different scraping methods for getting different kind of data for user needs.
+
+# For Running The Project
+- Be sure you installed the requirements.txt
+- Docker and the container has been created
+- Run the celery worker with command ``` celery -A product_crawler worker --loglevel=info -P solo ``` (Not required if you build with docker)
 
 # Main Page
 - Main page allows users to navigate through platform easily, here they can go to check their scrap requests, their status, and scraped data's detail.
