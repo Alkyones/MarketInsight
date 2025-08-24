@@ -18,17 +18,13 @@ CREDENTIALS_DIR = Path(__file__).resolve().parent.parent.parent
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 credentialsFile = Path.joinpath(CREDENTIALS_DIR .parent, 'credentials/amazonPipeline.json')
-credentials = json.load(open(credentialsFile))
 
 
 
 
-SECRET_KEY = credentials['secretKey']
+SECRET_KEY = os.environ.get('SECRET_KEY', '')
 
-
-DEBUG = True
-
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web']
 
 
 # Application definition
@@ -82,13 +78,14 @@ WSGI_APPLICATION = 'product_crawler.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/4.1/ref/settings/#databases
+MONGO_NAME = os.environ.get('MONGO_NAME', 'ScrapData')
+MONGO_HOST = os.environ.get('MONGO_HOST', '')
 DATABASES = {
     'default': {
         'ENGINE': 'djongo',
-        'NAME': credentials['dbName'],
+        'NAME': MONGO_NAME,
         'CLIENT': {
-            'host': credentials['dbUrl']
+            'host': MONGO_HOST
         }
     }
 }
