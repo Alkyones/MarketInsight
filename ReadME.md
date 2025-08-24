@@ -51,7 +51,7 @@ Django Based Web Application For Automating Scraping Data
 	```bash
 	python manage.py runserver
 	```
-7. ** Run the worker: **
+7. **Run the worker :**
 	```
  	celery -A product_crawler worker --loglevel=info -P solo
 	```
