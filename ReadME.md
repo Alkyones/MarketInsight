@@ -52,8 +52,10 @@ Django Based Web Application For Automating Scraping Data
 	python manage.py runserver
 	```
 7. ** Run the worker: **
-	```celery -A product_crawler worker --loglevel=info -P solo
-	``` (Not required if you build with docker)
+	```
+ 	celery -A product_crawler worker --loglevel=info -P solo
+	```
+	 (Not required if you build with docker)
 
 # How to Test
 
