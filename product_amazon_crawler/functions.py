@@ -35,7 +35,7 @@ def get_links_from_page(driver, region_data):
     xpath = region_data.navbar_xpath
     try:
         wait = WebDriverWait(driver, 15)
-        find_div_partial_class_name = wait.until(EC.presence_of_element_located((By.XPATH, xpath)))
+        find_div_partial_class_name = wait.until(EC.visibility_of_element_located((By.XPATH, xpath)))
     except Exception as e:
         with open('/tmp/selenium_page_source.html', 'w', encoding='utf-8') as f:
             f.write(driver.page_source)
@@ -62,7 +62,7 @@ def get_scraped_data_from_links(driver, region_data, url_base, links, user, scra
         title = None
         try:
             wait = WebDriverWait(driver, 15)
-            title_element = wait.until(EC.presence_of_element_located((By.XPATH, xpath)))
+            title_element = wait.until(EC.visibility_of_element_located((By.XPATH, xpath)))
             title = title_element.text.strip()
         except Exception:
             title = None
