@@ -32,7 +32,7 @@ services:
 
 
     db:
-      image: postgres:14.10
+      image: ${POSTGRES_IMAGE}
       restart: always
       env_file:
         - .env
