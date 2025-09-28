@@ -9,7 +9,8 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - mongo
+      - db
+      - redis
     env_file:
       - .env
 
@@ -19,17 +20,28 @@ services:
     volumes:
       - .:/code
     depends_on:
-      - mongo
+      - db
+      - redis
     env_file:
       - .env
-
-  mongo:
-    image: mongo:6.0
-    restart: always
+  redis:
+    image: redis:7.2
     ports:
-      - "27017:27017"
+      - "6379:6379"
+    restart: always
+
+
+  db:
+    image: postgres:14
+    restart: always
+    environment:
+      POSTGRES_DB: marketinsight
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
     volumes:
-      - mongo_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
-  mongo_data:
+  postgres_data:

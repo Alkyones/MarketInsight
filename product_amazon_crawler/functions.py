@@ -1,3 +1,5 @@
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -6,7 +8,7 @@ import time
 from selenium import webdriver
 import sys
 from .models import AmazonDataScrapCollection, ScrapRequest
-from bson import ObjectId
+
 
 
 def find_price(item):
@@ -34,8 +36,10 @@ def get_links_from_page(driver, region_data):
     try:
         wait = WebDriverWait(driver, 15)
         find_div_partial_class_name = wait.until(EC.presence_of_element_located((By.XPATH, xpath)))
-    except Exception:
-        print("No links found (timeout)")
+    except Exception as e:
+        with open('/tmp/selenium_page_source.html', 'w', encoding='utf-8') as f:
+            f.write(driver.page_source)
+        print("[DEBUG] Full page source written to /tmp/selenium_page_source.html")
         return False
     find_a_tags = find_div_partial_class_name.find_elements(By.TAG_NAME, "a")
     links = [
@@ -87,12 +91,15 @@ def get_scraped_data_from_links(driver, region_data, url_base, links, user, scra
         else:
             print("title is not found for link: ", link)
 
-    AmazonDataScrapCollection.objects.create(
-        data=scraped_top_list,
-        user=user,
-        request=ScrapRequest.objects.get(_id=ObjectId(scrape_request_id)),
-    )
-    return True
+    if scraped_top_list:
+        AmazonDataScrapCollection.objects.create(
+            data=scraped_top_list,
+            user=user,
+            request=ScrapRequest.objects.get(id=scrape_request_id),
+        )
+        return True
+    else:
+        return False
 
 
 def scrape_data(region_data, scrape_request_id, user):
@@ -102,36 +109,55 @@ def scrape_data(region_data, scrape_request_id, user):
     else:
         url = f"{url_base}/gp/bestsellers"
     options = webdriver.ChromeOptions()
+    options.binary_location = "/usr/bin/chromium-browser"
     options.add_argument("--ignore-certificate-errors")
     options.add_argument("--disable-web-security")
     options.add_argument("--allow-running-insecure-content")
     options.add_argument("--log-level=3")
     options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--remote-debugging-port=9222")
+    options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     driver = webdriver.Chrome(options=options)
     driver.get(url)
     driver.implicitly_wait(10)
     print("Getting the data")
     link_list = get_links_from_page(driver, region_data)
+    channel_layer = get_channel_layer()
     if not link_list:
-        ScrapRequest.objects.filter(_id=ObjectId(scrape_request_id)).update(
+        ScrapRequest.objects.filter(id=scrape_request_id).update(
             status="FAILED"
         )
-        sys.exit()
+        async_to_sync(channel_layer.group_send)(
+            f'status_{scrape_request_id}',
+            {'type': 'status_update', 'status': 'FAILED'}
+        )
+        return False
 
     scraped_data = get_scraped_data_from_links(
         driver, region_data, url_base, link_list, user, scrape_request_id
     )
     if scraped_data:
-        ScrapRequest.objects.filter(_id=ObjectId(scrape_request_id)).update(
+        ScrapRequest.objects.filter(id=scrape_request_id).update(
             status="COMPLETED"
+        )
+        async_to_sync(channel_layer.group_send)(
+            f'status_{scrape_request_id}',
+            {'type': 'status_update', 'status': 'COMPLETED'}
         )
         print("Data scraped successfully.")
         driver.quit()
         return True
     else:
         print("While scraping data an error occured please check the logs.")
-        ScrapRequest.objects.filter(_id=ObjectId(scrape_request_id)).update(
+        ScrapRequest.objects.filter(id=scrape_request_id).update(
             status="FAILED"
+        )
+        async_to_sync(channel_layer.group_send)(
+            f'status_{scrape_request_id}',
+            {'type': 'status_update', 'status': 'FAILED'}
         )
         driver.quit()
         return False

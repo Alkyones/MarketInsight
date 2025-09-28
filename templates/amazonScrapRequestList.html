@@ -35,30 +35,23 @@
 
     <script>
       if(document.title === "Amazon Request List | MarketInsight"){
-        const spinningCircles = document.querySelectorAll('i.fa-circle-notch');
+        document.querySelectorAll('i.fa-circle-notch').forEach(circle => {
+          const pk = circle.dataset.pk;
+          const statusElement = document.getElementById(`status-${pk}`);
+          const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+          const ws_url = `${ws_scheme}://${window.location.host}/ws/status/${pk}/`;
+          const socket = new WebSocket(ws_url);
 
-        // Function to update status
-        function updateStatus(pk) {
-          const getStatusUrl = '{% url "amazon:get_scrap_request_status" pk="XXXX" %}'.replace('XXXX', pk);
-          const xhr = new XMLHttpRequest();
-          xhr.open('GET', getStatusUrl, true);
-          xhr.onload = function() {
-            if (xhr.status === 200) {
-              const data = JSON.parse(xhr.responseText);
-              if (data.status === 'COMPLETED') {
-                const statusElement = document.getElementById(`status-${pk}`);
-                statusElement.innerHTML = '<i class="fas fa-check-circle text-success" style="font-size: 24px;"></i>';
-              }
+          socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            if (data.status === 'COMPLETED') {
+              statusElement.innerHTML = '<i class="fas fa-check-circle text-success" style="font-size: 24px;"></i>';
+            } else if (data.status === 'FAILED') {
+              statusElement.innerHTML = '<i class="fas fa-times-circle text-danger" style="font-size: 24px;"></i>';
+            } else {
+              statusElement.innerHTML = '<i class="fas fa-circle-notch fa-spin" data-pk="' + pk + '" style="font-size: 24px;"></i>';
             }
           };
-          xhr.send();
-        }
-
-        // Initialize update status for each spinning circle
-        spinningCircles.forEach(circle => {
-          const pk = circle.dataset.pk;
-          updateStatus(pk);
-          setInterval(() => updateStatus(pk), 5000); // update every 5 seconds
         });
       }
     </script>

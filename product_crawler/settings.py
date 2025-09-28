@@ -29,6 +29,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web']
 
 # Application definition
 
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -38,14 +39,23 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'product_amazon_crawler.apps.ProductAmazonCrawlerConfig',
     'main_page.apps.MainPageConfig',
-    'accounts.apps.AccountsConfig'  
+    'accounts.apps.AccountsConfig',
+    'channels',
 ]
 
+ASGI_APPLICATION = 'product_crawler.asgi.application'
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('redis', 6379)],
+        },
     },
 }
+
+# Celery configuration
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://redis:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -78,15 +88,14 @@ WSGI_APPLICATION = 'product_crawler.wsgi.application'
 
 
 # Database
-MONGO_NAME = os.environ.get('MONGO_NAME', 'ScrapData')
-MONGO_HOST = os.environ.get('MONGO_HOST', '')
 DATABASES = {
     'default': {
-        'ENGINE': 'djongo',
-        'NAME': MONGO_NAME,
-        'CLIENT': {
-            'host': MONGO_HOST
-        }
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('POSTGRES_DB', 'marketinsight'),
+        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'postgres'),
+        'HOST': os.environ.get('POSTGRES_HOST', 'db'),
+        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
     }
 }
 
@@ -125,13 +134,11 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Celery Configuration
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+DEBUG = True

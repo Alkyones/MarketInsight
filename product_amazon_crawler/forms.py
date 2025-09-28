@@ -6,7 +6,6 @@ from .models import AmazonDataScrapCountry
 class AmazonCrawlerForm(forms.Form):
     region = forms.CharField(
         max_length=100,
-        widget=forms.Select(choices=[(e._id, e.country_name) for e in AmazonDataScrapCountry.objects.all()]),
         label="Select region",
     )
     reason = forms.CharField(
@@ -18,11 +17,13 @@ class AmazonCrawlerForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        from .models import AmazonDataScrapCountry
+        choices = [(e.pk, e.country_name) for e in AmazonDataScrapCountry.objects.all()]
+        self.fields['region'].widget = forms.Select(choices=choices)
         self.fields['region'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'Enter region'
         })
-        
         self.fields['reason'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'Enter note for scraping'
